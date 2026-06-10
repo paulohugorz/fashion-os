@@ -416,13 +416,13 @@
 
     async function loadFashionTerms() {
       if (_fashionTerms) return _fashionTerms;
-      try { const r = await fetch('./js/fashion-terms.json',{cache:'force-cache'}); _fashionTerms = await r.json(); } catch(_){ _fashionTerms = []; }
+      try { const r = await fetch('./js/fashion-terms.json'); _fashionTerms = await r.json(); } catch(_){ _fashionTerms = []; }
       return _fashionTerms;
     }
 
     async function loadVisualRefs() {
       if (_visualRefs) return _visualRefs;
-      try { const r = await fetch('./js/visual-references.json',{cache:'force-cache'}); _visualRefs = await r.json(); } catch(_){ _visualRefs = []; }
+      try { const r = await fetch('./js/visual-references.json'); _visualRefs = await r.json(); } catch(_){ _visualRefs = []; }
       return _visualRefs;
     }
 
