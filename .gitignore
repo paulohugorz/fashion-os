@@ -1,0 +1,39 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Banco de dados
+data/database/*.db
+data/database/*.db-shm
+data/database/*.db-wal
+
+# Imagens geradas (armazenamento local)
+data/images/
+data/outputs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node (Fase 2)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# IDE
+.idea/
+.vscode/
+*.swp
