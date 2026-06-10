@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fashion OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --obsidian: #0F0F0D;
+      --linen:    #E8E4DC;
+      --cream:    #F5F2EB;
+      --gold:     #B89A6A;
+      --muted:    #9E9B95;
+      --border:   rgba(15,15,13,0.12);
+      --border-hover: rgba(15,15,13,0.5);
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--obsidian);
+      font-family: 'Jost', system-ui, sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 18px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .version {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Layout */
+    main {
+      display: flex;
+      height: calc(100vh - 49px);
+    }
+
+    /* Panels */
+    .panel {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      padding: 32px;
+      gap: 20px;
+    }
+    .panel-left  { border-right: 1px solid var(--border); }
+
+    /* Typography */
+    h1, h2 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 32px;
+      font-weight: 300;
+      line-height: 1.2;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Textarea */
+    textarea {
+      flex: 1;
+      resize: none;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      font-family: 'Jost', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--obsidian);
+      transition: border-color 0.2s;
+    }
+    textarea::placeholder { color: rgba(158,155,149,0.6); }
+    textarea:focus { outline: none; border-bottom-color: rgba(15,15,13,0.5); }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 10px; }
+    .btn {
+      padding: 10px 20px;
+      font-family: 'Jost', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      flex: 1;
+      background: var(--obsidian);
+      color: var(--cream);
+      border: 1px solid var(--obsidian);
+    }
+    .btn-primary:hover { background: #2a2a26; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--obsidian); color: var(--obsidian); }
+
+    /* Meta panel */
+    .meta-panel {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 14px 16px;
+      background: rgba(232,228,220,0.5);
+    }
+    .meta-panel.visible { display: block; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 0;
+    }
+    .meta-row span:last-child { color: var(--gold); }
+
+    /* Right panel header */
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    label.btn-upload {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--muted);
+      padding: 7px 14px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+      font-family: 'Jost', system-ui, sans-serif;
+      white-space: nowrap;
+      margin-top: 4px;
+    }
+    label.btn-upload:hover { border-color: var(--obsidian); color: var(--obsidian); }
+
+    /* Drop zone */
+    #drop-zone {
+      flex: 1;
+      border: 1px solid rgba(15,15,13,0.15);
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop-zone:hover { border-color: rgba(15,15,13,0.3); }
+    #drop-zone.drag-over { border-color: var(--gold); background: var(--linen); }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      padding: 32px;
+    }
+    .plus-icon {
+      width: 48px; height: 48px;
+      border: 1px solid rgba(15,15,13,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .empty-label { font-size: 13px; color: var(--muted); }
+    .empty-hint  { font-size: 11px; color: rgba(158,155,149,0.6); }
+
+    #image-preview {
+      display: none;
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      padding: 16px;
+    }
+
+    /* Loading spinner */
+    #loading-overlay {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(245,242,235,0.85);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    #loading-overlay.visible { display: flex; }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid rgba(15,15,13,0.15);
+      border-top-color: var(--obsidian);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* Image actions */
+    .image-actions { display: none; }
+    .image-actions.visible { display: flex; gap: 10px; }
+
+    /* Success */
+    .success-msg {
+      display: none;
+      text-align: center;
+      padding: 12px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(184,154,106,0.3);
+      border-radius: 2px;
+    }
+    .success-msg.visible { display: block; }
+
+    ::selection { background: rgba(184,154,106,0.2); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="logo">Fashion OS</span>
+    <span class="version">v1</span>
+  </header>
+
+  <main>
+
+    <!-- Left -->
+    <section class="panel panel-left">
+      <div>
+        <h1>Descreva a peça</h1>
+        <p class="subtitle">Escreva o conceito, materiais, silhueta ou referência visual.</p>
+      </div>
+
+      <textarea
+        id="description"
+        placeholder="Ex: calça de alfaiataria preta com mobilidade total, cintura alta, perna reta levemente afunilada no tornozelo, tecido com caimento fluido..."
+      ></textarea>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="handleGenerate()">Gerar visualização</button>
+        <button class="btn btn-ghost" onclick="clearAll()">Limpar</button>
+      </div>
+
+      <div class="meta-panel" id="meta-panel">
+        <div class="meta-row"><span>Caracteres</span><span id="char-count">0</span></div>
+        <div class="meta-row"><span>Palavras</span><span id="word-count">0</span></div>
+        <div class="meta-row"><span>SKU gerado</span><span id="save-status">—</span></div>
+      </div>
+    </section>
+
+    <!-- Right -->
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Referência visual</h2>
+          <p class="subtitle">Arraste uma imagem ou clique para fazer upload.</p>
+        </div>
+        <label class="btn-upload" for="file-input">Upload</label>
+        <input id="file-input" type="file" accept="image/*" style="display:none" onchange="handleFileInput(event)" />
+      </div>
+
+      <div
+        id="drop-zone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave()"
+        ondrop="handleDrop(event)"
+      >
+        <div class="empty-state" id="empty-state">
+          <div class="plus-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4v12M4 10h12" stroke="#9E9B95" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="empty-label">Arraste uma imagem aqui</p>
+          <p class="empty-hint">JPG, PNG, WEBP — máx. 10 MB</p>
+        </div>
+
+        <img id="image-preview" alt="Referência visual" />
+
+        <div id="loading-overlay">
+          <div class="spinner"></div>
+          <span class="loading-label">Processando</span>
+        </div>
+      </div>
+
+      <div class="image-actions" id="image-actions">
+        <button class="btn btn-primary" onclick="savePiece()">Salvar peça</button>
+        <button class="btn btn-ghost" onclick="removeImage()">Remover</button>
+      </div>
+
+      <div class="success-msg" id="success-msg">Peça salva com sucesso</div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentFile = null;
+    const textarea = document.getElementById('description');
+
+    textarea.addEventListener('input', () => {
+      const text = textarea.value;
+      document.getElementById('char-count').textContent = text.length;
+      document.getElementById('word-count').textContent = text.trim() ? text.trim().split(/\s+/).length : 0;
+      document.getElementById('meta-panel').classList.toggle('visible', text.length > 0);
+    });
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('drop-zone').classList.add('drag-over');
+    }
+    function handleDragLeave() {
+      document.getElementById('drop-zone').classList.remove('drag-over');
+    }
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('drop-zone').classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadImage(file);
+    }
+    function handleFileInput(e) {
+      if (e.target.files[0]) loadImage(e.target.files[0]);
+    }
+
+    function loadImage(file) {
+      if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande. Máximo 10 MB.'); return; }
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = e => showImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+
+    function showImage(src) {
+      document.getElementById('image-preview').src = src;
+      document.getElementById('image-preview').style.display = 'block';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('image-actions').classList.add('visible');
+    }
+
+    function removeImage() {
+      currentFile = null;
+      const preview = document.getElementById('image-preview');
+      preview.style.display = 'none';
+      preview.src = '';
+      document.getElementById('empty-state').style.display = 'flex';
+      document.getElementById('image-actions').classList.remove('visible');
+      document.getElementById('file-input').value = '';
+      document.getElementById('success-msg').classList.remove('visible');
+    }
+
+    function handleGenerate() {
+      const desc = textarea.value.trim();
+      if (!desc) { textarea.focus(); return; }
+      if (currentFile) { savePiece(); return; }
+
+      const overlay = document.getElementById('loading-overlay');
+      overlay.classList.add('visible');
+      setTimeout(() => {
+        overlay.classList.remove('visible');
+        document.getElementById('file-input').click();
+      }, 800);
+    }
+
+    function savePiece() {
+      const ts = Date.now().toString().slice(-4);
+      const sku = `PH${new Date().getFullYear().toString().slice(-2)}${ts}`;
+      document.getElementById('save-status').textContent = sku;
+      document.getElementById('meta-panel').classList.add('visible');
+      document.getElementById('success-msg').classList.add('visible');
+    }
+
+    function clearAll() {
+      textarea.value = '';
+      textarea.dispatchEvent(new Event('input'));
+      removeImage();
+    }
+  </script>
+
+</body>
+</html>
