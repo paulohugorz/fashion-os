@@ -307,15 +307,14 @@
           <input
             id="api-token"
             type="password"
-            placeholder="Token Together AI (gratuito em api.together.ai)"
-            oninput="localStorage.setItem('together_token', this.value)"
+            placeholder="Chave fal.ai"
             style="flex:1;padding:8px 12px;font-family:inherit;font-size:12px;font-weight:300;
                    border:1px solid var(--border-md);border-radius:2px;background:transparent;
                    color:var(--obsidian);outline:none;letter-spacing:0.03em;"
           />
         </div>
         <p style="font-size:11px;color:var(--muted);letter-spacing:0.03em;">
-          Crie conta gratuita em <a href="https://api.together.ai" target="_blank" style="color:var(--gold);text-decoration:none;">api.together.ai</a> → API Keys → cole aqui. Sem cartão, sem custo.
+          Cadastro gratuito em <a href="https://fal.ai" target="_blank" style="color:var(--gold);text-decoration:none;">fal.ai</a> → Dashboard → API Keys → criar chave. Ganha $10 de crédito sem cartão.
         </p>
       </div>
     </section>
@@ -324,10 +323,10 @@
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      const saved = localStorage.getItem('together_token');
+      const saved = localStorage.getItem('fal_token');
       if (saved) document.getElementById('api-token').value = saved;
       document.getElementById('api-token').addEventListener('input', e => {
-        localStorage.setItem('together_token', e.target.value);
+        localStorage.setItem('fal_token', e.target.value);
       });
     });
 
@@ -375,7 +374,7 @@
     }
 
     async function gerarImagem(txt) {
-      const token = localStorage.getItem('together_token') || document.getElementById('api-token').value;
+      const token = localStorage.getItem('fal_token') || document.getElementById('api-token').value;
       const img = document.getElementById('generated-img');
       const loading = document.getElementById('img-loading');
       const empty = document.getElementById('img-empty');
@@ -394,30 +393,28 @@
       const prompt = txt + ', fashion editorial photo, studio lighting, minimalist white background, full body outfit, high quality, photorealistic';
 
       try {
-        const res = await fetch('https://api.together.xyz/v1/images/generations', {
+        const res = await fetch('https://fal.run/fal-ai/flux/schnell', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Key ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'black-forest-labs/FLUX.1-schnell-Free',
             prompt,
-            steps: 4,
-            n: 1,
-            width: 768,
-            height: 1024
+            image_size: 'portrait_4_3',
+            num_inference_steps: 4,
+            num_images: 1
           })
         });
         const data = await res.json();
 
-        if (data?.error) {
-          const msg = data.error.message || 'Erro na API';
-          showImgError(msg.includes('API key') ? 'Token inválido ou expirado' : msg);
+        if (!res.ok) {
+          const msg = data?.detail || data?.message || 'Erro na API';
+          showImgError(res.status === 401 ? 'Chave inválida' : msg);
           return;
         }
 
-        const src = data?.data?.[0]?.url || data?.data?.[0]?.b64_json;
-        if (!src) { showImgError('Resposta inesperada da API'); return; }
+        const src = data?.images?.[0]?.url;
+        if (!src) { showImgError('Resposta inesperada'); return; }
 
-        img.src = src.startsWith('http') ? src : `data:image/png;base64,${src}`;
+        img.src = src;
         img.style.display = 'block';
         loading.classList.remove('visible');
       } catch (e) {
