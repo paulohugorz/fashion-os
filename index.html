@@ -239,6 +239,29 @@
     }
 
     ::selection { background: rgba(184,154,106,0.15); }
+
+    #fashion-os-references { display: none; flex-direction: column; gap: 8px; }
+    #fashion-os-references.visible { display: flex; }
+    .refs-label {
+      font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--muted); padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fashion-ref-card {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .fashion-ref-card:last-child { border-bottom: none; }
+    .fashion-ref-thumb {
+      width: 36px; height: 36px; border-radius: 2px;
+      background: rgba(232,228,220,0.6); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); flex-shrink: 0;
+    }
+    .fashion-ref-card strong { font-size: 11px; font-weight: 400; display: block; }
+    .fashion-ref-card p { font-size: 10px; color: var(--muted); margin: 2px 0; }
+    .fashion-ref-card small { font-size: 10px; color: var(--muted); opacity: 0.7; }
   </style>
 </head>
 <body>
@@ -300,6 +323,10 @@
         </div>
 
         <table class="meta-table" id="meta-table"></table>
+
+        <div id="fashion-os-references">
+          <p class="refs-label">Referências do catálogo</p>
+        </div>
       </div>
 
       <div class="panel-footer" style="flex-direction:column;gap:6px;align-items:stretch;">
@@ -369,6 +396,7 @@
 
       document.getElementById('empty-state').style.display = 'none';
       document.getElementById('result-panel').classList.add('visible');
+      document.getElementById('fashion-os-references').classList.remove('visible');
 
       gerarImagem(txt);
     }
@@ -390,7 +418,19 @@
         return;
       }
 
-      const prompt = txt + ', fashion editorial photo, studio lighting, minimalist white background, full body outfit, high quality, photorealistic';
+      // Enriquece prompt com catálogo de referências
+      let prompt = txt + ', fashion editorial photo, studio lighting, minimalist white background, full body outfit, high quality, photorealistic';
+      if (window.FashionOSCatalog) {
+        try {
+          const refs = await window.FashionOSCatalog.searchFashionCatalog(txt, { limit: 8 });
+          if (refs.length > 0) {
+            prompt = window.FashionOSCatalog.buildEnrichedFashionPrompt(txt, refs)
+              + '\nFashion editorial photo, studio lighting, minimalist white background, full body, photorealistic.';
+            window.FashionOSCatalog.renderFashionResults('#fashion-os-references', refs.slice(0, 4));
+            document.getElementById('fashion-os-references').classList.add('visible');
+          }
+        } catch (_) {}
+      }
 
       try {
         const res = await fetch('https://fal.run/fal-ai/flux/schnell', {
@@ -440,6 +480,7 @@
       document.getElementById('description').value = '';
       document.getElementById('result-panel').classList.remove('visible');
       document.getElementById('empty-state').style.display = '';
+      document.getElementById('fashion-os-references').classList.remove('visible');
       const img = document.getElementById('generated-img');
       img.style.display = 'none';
       img.src = '';
@@ -448,5 +489,6 @@
     }
   </script>
 
+  <script src="./js/fashion-os-catalog.js"></script>
 </body>
 </html>
