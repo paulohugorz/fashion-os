@@ -463,14 +463,47 @@
         });
     }
 
+    // Mapa de cores PT → EN para o prompt do modelo
+    const COLOR_MAP = {
+      pret: 'black', branc: 'white', cinz: 'gray', azul: 'blue', verde: 'green',
+      vermelh: 'red', beg: 'beige', crem: 'cream', marrom: 'brown', caramel: 'camel',
+      dourad: 'gold', nude: 'nude', terrac: 'terracotta', areia: 'sand',
+      lavanda: 'lavender', rosa: 'pink', amarelo: 'yellow', laranja: 'orange',
+      bordo: 'burgundy', vinho: 'wine', coral: 'coral', mostarda: 'mustard',
+      'off.white': 'off-white', offwhite: 'off-white',
+    };
+
+    function extractColorEn(txt) {
+      const q = normalize(txt);
+      for (const [pt, en] of Object.entries(COLOR_MAP)) {
+        if (q.includes(pt)) return en;
+      }
+      return null;
+    }
+
     // Compila prompt positivo e negativo a partir da taxonomia + referências
     function buildPrompt(userTxt, garment, terms, refs) {
-      const pos = new Set(['fashion editorial photography', 'full body', 'soft studio lighting',
-        'minimalist white background', 'photorealistic', 'high quality', 'natural pose',
-        'premium fabric texture', 'clean garment construction', 'real person wearing clothes']);
-      const neg = new Set(['blurry', 'low quality', 'watermark', 'text overlay', 'logo',
+      // A ordem importa para SD: termos mais específicos primeiro
+      const colorEn = extractColorEn(userTxt);
+      const garmentEn = garment ? garment.en : 'clothing';
+
+      // Âncoras do prompt — garment + cor em inglês no início, alta relevância
+      const anchors = [garmentEn];
+      if (colorEn) anchors.push(colorEn + ' ' + garmentEn, colorEn + ' color');
+
+      const pos = new Set([
+        ...anchors,
+        'fashion editorial photography', 'full body shot', 'soft studio lighting',
+        'neutral background', 'photorealistic', 'high resolution', 'natural pose',
+        'premium fabric texture', 'clean garment construction', 'real model wearing',
+        '8k', 'sharp focus'
+      ]);
+      const neg = new Set([
+        'blurry', 'low quality', 'watermark', 'text overlay', 'logo',
         'disfigured', 'deformed hands', 'extra limbs', 'cartoon', 'illustration',
-        'painting', 'render', 'plastic skin', 'overexposed', 'bad anatomy']);
+        'painting', 'render', 'plastic skin', 'overexposed', 'bad anatomy',
+        'wrong color', 'different color'
+      ]);
 
       // Base da peça
       if (garment) garment.base.split(',').map(s=>s.trim()).forEach(s=>pos.add(s));
@@ -487,8 +520,10 @@
         String(r.prompt_negativo||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>neg.add(s));
       });
 
+      // Prompt positivo: âncoras primeiro para garantir que o modelo priorize
+      const posArr = [...pos];
       return {
-        pos: userTxt + ', ' + [...pos].join(', '),
+        pos: posArr.join(', '),
         neg: [...neg].join(', ')
       };
     }
