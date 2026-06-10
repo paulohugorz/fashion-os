@@ -176,6 +176,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      position: relative;
+      overflow: hidden;
     }
     .img-slot span {
       font-size: 11px;
@@ -184,6 +186,34 @@
       color: var(--muted);
       opacity: 0.5;
     }
+    .img-slot img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .img-slot .img-loading {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(232,228,220,0.6);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .img-slot .img-loading.visible { display: flex; }
+    .img-spinner {
+      width: 20px; height: 20px;
+      border: 1.5px solid rgba(15,15,13,0.15);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .img-loading-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .meta-table { width: 100%; border-collapse: collapse; }
     .meta-table tr { border-bottom: 1px solid var(--border); }
@@ -209,7 +239,19 @@
 
   <header>
     <span class="logo">Fashion OS</span>
-    <span class="version">v1</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <input
+        id="api-token"
+        type="password"
+        placeholder="Token Together AI"
+        title="Crie uma conta gratuita em api.together.ai e cole seu token aqui"
+        oninput="localStorage.setItem('together_token', this.value)"
+        style="width:180px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:300;
+               letter-spacing:0.05em;border:1px solid var(--border-md);border-radius:2px;
+               background:transparent;color:var(--obsidian);outline:none;"
+      />
+      <span class="version">v1</span>
+    </div>
   </header>
 
   <main>
@@ -248,13 +290,18 @@
       <div class="result-panel" id="result-panel">
         <span class="result-sku" id="result-sku"></span>
 
-        <div class="img-slot">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <div class="img-slot" id="img-slot">
+          <svg id="img-placeholder-icon" width="28" height="28" viewBox="0 0 28 28" fill="none">
             <rect x="3" y="5" width="22" height="18" rx="2" stroke="#9E9B95" stroke-width="1.2"/>
             <circle cx="9.5" cy="11" r="2" stroke="#9E9B95" stroke-width="1.2"/>
             <path d="M3 19l5-5 4 4 4-4 6 6" stroke="#9E9B95" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span>Imagem em breve</span>
+          <span id="img-placeholder-label">Gerando imagem...</span>
+          <img id="generated-img" alt="Peça gerada" />
+          <div class="img-loading" id="img-loading">
+            <div class="img-spinner"></div>
+            <span class="img-loading-label">Gerando</span>
+          </div>
         </div>
 
         <table class="meta-table" id="meta-table"></table>
@@ -264,6 +311,11 @@
   </main>
 
   <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('together_token');
+      if (saved) document.getElementById('api-token').value = saved;
+    });
+
     function gerar() {
       const txt = document.getElementById('description').value.trim();
       if (!txt) { document.getElementById('description').focus(); return; }
@@ -303,12 +355,70 @@
 
       document.getElementById('empty-state').style.display = 'none';
       document.getElementById('result-panel').classList.add('visible');
+
+      gerarImagem(txt);
+    }
+
+    async function gerarImagem(txt) {
+      const token = localStorage.getItem('together_token') || document.getElementById('api-token').value;
+      const img = document.getElementById('generated-img');
+      const loading = document.getElementById('img-loading');
+      const icon = document.getElementById('img-placeholder-icon');
+      const label = document.getElementById('img-placeholder-label');
+
+      img.style.display = 'none';
+      icon.style.display = 'none';
+      label.style.display = 'none';
+
+      if (!token) {
+        icon.style.display = 'block';
+        label.textContent = 'Cole seu token Together AI no campo do header';
+        label.style.display = 'block';
+        return;
+      }
+
+      loading.classList.add('visible');
+
+      const prompt = txt + ', fashion editorial photo, studio lighting, minimalist white background, full body outfit, high quality, photorealistic';
+
+      try {
+        const res = await fetch('https://api.together.xyz/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'black-forest-labs/FLUX.1-schnell-Free',
+            prompt,
+            steps: 4,
+            n: 1,
+            width: 768,
+            height: 1024
+          })
+        });
+        const data = await res.json();
+        const src = data?.data?.[0]?.url || data?.data?.[0]?.b64_json;
+        if (!src) throw new Error('sem imagem');
+
+        img.src = src.startsWith('http') ? src : `data:image/png;base64,${src}`;
+        img.style.display = 'block';
+        loading.classList.remove('visible');
+      } catch (e) {
+        loading.classList.remove('visible');
+        icon.style.display = 'block';
+        label.textContent = 'Erro ao gerar imagem';
+        label.style.display = 'block';
+      }
     }
 
     function limpar() {
       document.getElementById('description').value = '';
       document.getElementById('result-panel').classList.remove('visible');
       document.getElementById('empty-state').style.display = '';
+      const img = document.getElementById('generated-img');
+      img.style.display = 'none';
+      img.src = '';
+      document.getElementById('img-placeholder-icon').style.display = 'block';
+      document.getElementById('img-placeholder-label').style.display = 'none';
+      document.getElementById('img-loading').classList.remove('visible');
     }
   </script>
 
